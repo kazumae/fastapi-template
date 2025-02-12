@@ -72,68 +72,71 @@ docker-compose exec app alembic history -v
 
 ## データベースシーディング
 
-### シードデータの追加方法
+### シードデータの種類と構成
 
-1. 基本的な使い方
+プロジェクトには2種類のシードデータがあります：
+
+1. マスターデータ
+   - 本番環境でも使用する基本データ
+   - `app/src/scripts/seeds/master/` に定義
+   - 例：マスタテーブルの基本データなど
+
+2. 開発用テストデータ
+   - 開発環境でのみ使用するテストデータ
+   - `app/src/scripts/seeds/development/` に定義
+   - 例：テスト用のダミーデータなど
+
+### シードデータの投入方法
+
+基本的なコマンド：
+
 ```bash
-# テストデータを投入
-docker-compose exec app python -m src.scripts.seed_tests
+# すべてのデータを投入（マスターデータ + 開発用データ）
+docker-compose exec app python -m src.scripts.seed
+
+# マスターデータのみ投入
+docker-compose exec app python -m src.scripts.seed --type master
+
+# 開発用テストデータのみ投入
+docker-compose exec app python -m src.scripts.seed --type development
 ```
 
-2. シードデータの確認
+### 環境別の推奨設定
+
+1. 開発環境
 ```bash
-# APIエンドポイントで確認
-curl http://localhost:8000/tests
-
-# 直接データベースで確認
-docker-compose exec db mysql -u myapp_user -pmyapp_password myapp -e "SELECT * FROM tests;"
+# マスターデータと開発用データの両方を投入
+docker-compose exec app python -m src.scripts.seed --type all
 ```
 
-### 新しいシーダーの作成
-
-1. `app/src/scripts/` ディレクトリに新しいシーダーファイルを作成
-2. 以下のテンプレートを使用：
-
-```python
-from src.database import SessionLocal
-from src.models import YourModel
-
-def seed_your_model() -> None:
-    db = SessionLocal()
-    try:
-        data = [
-            YourModel(field1="value1", field2="value2"),
-            YourModel(field1="value3", field2="value4"),
-        ]
-        db.add_all(data)
-        db.commit()
-        print("データを追加しました。")
-    except Exception as e:
-        print(f"エラーが発生しました: {e}")
-        db.rollback()
-    finally:
-        db.close()
-
-if __name__ == "__main__":
-    seed_your_model()
-```
-
-### トラブルシューティング
-
-1. データベース接続の確認
+2. テスト環境
 ```bash
-docker-compose exec app python -c "from src.database import engine; print(engine.url)"
+# マスターデータのみを投入
+docker-compose exec app python -m src.scripts.seed --type master
 ```
 
-2. テーブルの存在確認
+3. 本番環境
 ```bash
-docker-compose exec db mysql -u myapp_user -pmyapp_password myapp -e "SHOW TABLES;"
+# マスターデータのみを投入
+docker-compose exec app python -m src.scripts.seed --type master
 ```
 
-3. テーブルのリセット
-```bash
-docker-compose exec db mysql -u myapp_user -pmyapp_password myapp -e "TRUNCATE TABLE table_name;"
-```
+### 新しいシードデータの追加方法
+
+1. マスターデータの追加
+   - `app/src/scripts/seeds/master/` に新しいシードファイルを作成
+   - `seed.py` の `run_master_seeds()` 関数に新しいシード関数を追加
+
+2. 開発用テストデータの追加
+   - `app/src/scripts/seeds/development/` に新しいシードファイルを作成
+   - `seed.py` の `run_development_seeds()` 関数に新しいシード関数を追加
+
+### 注意事項
+
+- マスターデータは本番環境でも使用されるため、慎重に管理してください
+- 開発用テストデータは本番環境に投入しないでください
+- シードデータを更新した場合は、チーム内で共有してください
+- 大量のテストデータが必要な場合は、ファクトリーの使用を検討してください
 
 ## その他の機能
 

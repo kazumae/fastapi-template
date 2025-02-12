@@ -2,24 +2,17 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from .test_master import TestMaster
 
-
-class TestBase(BaseModel):
+class TestMasterBase(BaseModel):
+    code: str
     name: str
     description: str | None = None
-    test_master_id: int
 
 
-class TestCreate(TestBase):
-    pass
-
-
-class Test(TestBase):
+class TestMaster(TestMasterBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    test_master: TestMaster
 
     class Config:
         from_attributes = True
