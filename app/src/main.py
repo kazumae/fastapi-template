@@ -1,10 +1,8 @@
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from minio import Minio
-from sqlalchemy.orm import Session
 
-from . import models
+from .api.v1.router import api_router
 from .config import settings
-from .database import get_db
 
 app = FastAPI()
 
@@ -22,7 +20,4 @@ async def root():
     return {"message": "Hello World"}
 
 
-@app.get("/tests")
-def read_tests(db: Session = Depends(get_db)):
-    tests = db.query(models.Test).all()
-    return tests
+app.include_router(api_router, prefix="/api/v1")
